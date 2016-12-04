@@ -24,7 +24,7 @@ namespace Ljc.WebApi.Areas.TimeStat.Controllers
         [HttpGet]
         public IEnumerable<TimeStatistic> Get()
         {
-            return _repository.GetAll();
+            return new List<TimeStatistic>();
         }
 
         // GET api/values/5
