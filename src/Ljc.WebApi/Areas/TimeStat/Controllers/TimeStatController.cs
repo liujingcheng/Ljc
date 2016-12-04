@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Ljc.WebApi.Areas.TimeStat.Controllers
 {
-    [Route("api/[controller]")]
+    //[Route("api/[controller]")]
     public class TimeStatController : Controller
     {
         private ITimeStatisticRepository _repository;
@@ -50,6 +50,12 @@ namespace Ljc.WebApi.Areas.TimeStat.Controllers
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+        }
+
+        [Route("time/anygoing")]
+        public bool IsAnyTaskGoing()
+        {
+            return _repository.IsAnyTaskGoing();
         }
     }
 }
