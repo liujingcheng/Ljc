@@ -68,8 +68,7 @@ namespace Ljc.DesktopApp
 
                         if (hasException)//child thread has exception
                         {
-                            TaskbarNotifier taskbarnotifier1 = new TaskbarNotifier("提示", "发生异常！" + exception.Message);
-                            taskbarnotifier1.Show();
+                            throw exception;
                             continue;
                         }
 
@@ -86,8 +85,7 @@ namespace Ljc.DesktopApp
                     }
                     catch (Exception ex)
                     {
-                        TaskbarNotifier taskbarnotifier1 = new Ljc.DesktopApp.TaskbarNotifier("提示", "发生异常！" + ex.Message);
-                        taskbarnotifier1.Show();
+                        throw ex;
                     }
                 }
             });

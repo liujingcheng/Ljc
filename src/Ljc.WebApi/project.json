@@ -16,7 +16,8 @@
             "type": "platform"
         },
         "Pomelo.EntityFrameworkCore.MySql": "1.1.0-rtm-10004",
-        "Pomelo.EntityFrameworkCore.MySql.Design": "1.1.0-rtm-10004"
+        "Pomelo.EntityFrameworkCore.MySql.Design": "1.1.0-rtm-10004",
+        "System.Globalization.Extensions": "4.3.0"
     },
 
     "tools": {

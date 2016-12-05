@@ -5,9 +5,10 @@ namespace Ljc.WebApi
 {
     public class LjcDbContext : DbContext
     {
+        public static string DbConnectionString;
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
              => optionsBuilder
-                 .UseMySql(@"server=localhost;database=dev;uid=root;pwd=000000;");
+                 .UseMySql(DbConnectionString);
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
