@@ -15,6 +15,7 @@
             "version": "1.0.0",
             "type": "platform"
         },
+        "MySql.Data.EntityFrameworkCore": "7.0.6-IR31",
         "Pomelo.EntityFrameworkCore.MySql": "1.1.0-rtm-10004",
         "Pomelo.EntityFrameworkCore.MySql.Design": "1.1.0-rtm-10004",
         "System.Globalization.Extensions": "4.3.0"
@@ -34,10 +35,15 @@
     }
   },
 
-  "buildOptions": {
-    "emitEntryPoint": true,
-    "preserveCompilationContext": true
-  },
+    "buildOptions": {
+        "emitEntryPoint": true,
+
+        "preserveCompilationContext": true,
+        "debugType": "portable",
+        "copyToOutput": {
+            "include": "appsettings.json"
+        }
+    },
 
   "runtimeOptions": {
     "configProperties": {

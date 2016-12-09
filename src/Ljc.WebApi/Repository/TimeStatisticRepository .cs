@@ -10,13 +10,7 @@ namespace Ljc.WebApi.Repository
     {
         public IEnumerable<TimeStatistic> GetAll()
         {
-            using (var context = new LjcDbContext())
-            {
-                // Create database
-                context.Database.EnsureCreated();
-                return context.Timestatistic.ToList();
-
-            }
+            throw new NotImplementedException();
         }
 
         public TimeStatistic Find(string key)
@@ -36,25 +30,17 @@ namespace Ljc.WebApi.Repository
 
         public void Add(TimeStatistic item)
         {
-            using (var context = new LjcDbContext())
-            {
-                // Create database
-                context.Database.EnsureCreated();
-
-            }
+            throw new NotImplementedException();
         }
 
         public string IsAnyTaskGoing()
         {
-            using (var context = new LjcDbContext())
+            using (var context = LjcDbContextFactory.Create())
             {
                 try
                 {
-                    // Create database
-                    context.Database.EnsureCreated();
-
                     return
-                        context.Timestatistic.Any(
+                        context.TimeStatisticDbSet.Any(
                             p => p.Status == "Started" && p.UserId == "a829bdd0186e4324a21f5be3b2c2998d").ToString();
                 }
                 catch (Exception ex)
