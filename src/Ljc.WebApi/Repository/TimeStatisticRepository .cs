@@ -44,16 +44,23 @@ namespace Ljc.WebApi.Repository
             }
         }
 
-        public bool IsAnyTaskGoing()
+        public string IsAnyTaskGoing()
         {
             using (var context = new LjcDbContext())
             {
-                // Create database
-                context.Database.EnsureCreated();
+                try
+                {
+                    // Create database
+                    context.Database.EnsureCreated();
 
-                return
-                    context.Timestatistic.Any(
-                        p => p.Status == "Started" && p.UserId == "a829bdd0186e4324a21f5be3b2c2998d");
+                    return
+                        context.Timestatistic.Any(
+                            p => p.Status == "Started" && p.UserId == "a829bdd0186e4324a21f5be3b2c2998d").ToString();
+                }
+                catch (Exception ex)
+                {
+                    return "got exception:" + ex.Message + "\r\n" + ex.StackTrace;
+                }
             }
 
         }

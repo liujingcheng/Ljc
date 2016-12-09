@@ -53,7 +53,7 @@ namespace Ljc.WebApi.Areas.TimeStat.Controllers
         }
 
         [Route("time/anygoing")]
-        public bool IsAnyTaskGoing()
+        public string IsAnyTaskGoing()
         {
             return _repository.IsAnyTaskGoing();
         }

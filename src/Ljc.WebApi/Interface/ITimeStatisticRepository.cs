@@ -11,6 +11,6 @@ namespace Ljc.WebApi.Interface
         TimeStatistic Remove(string key);
         void Update(TimeStatistic item);
 
-        bool IsAnyTaskGoing();
+        string IsAnyTaskGoing();
     }
 }
