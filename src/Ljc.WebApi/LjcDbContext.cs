@@ -5,18 +5,17 @@ namespace Ljc.WebApi
 {
     public class LjcDbContext : DbContext
     {
-        public static string DbConnectionString;
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-             => optionsBuilder
-                 .UseMySql(DbConnectionString);
-
+        {
+            optionsBuilder.UseMySql(DbHelper.DbConnectionString);
+        }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<TimeStatistic>();
             modelBuilder.Entity<MyUser>();
         }
 
-        public virtual DbSet<TimeStatistic> Timestatistic { get; set; }
-        public virtual DbSet<MyUser> Myuser { get; set; }
+        public virtual DbSet<TimeStatistic> timestatistic { get; set; }
+        public virtual DbSet<MyUser> myuser { get; set; }
     }
 }

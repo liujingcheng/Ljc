@@ -22,7 +22,8 @@ namespace Ljc.WebApi
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
             Configuration = builder.Build();
-            LjcDbContext.DbConnectionString = Configuration.GetConnectionString("DefaultConnection");
+
+            DbHelper.DbConnectionString = Configuration.GetConnectionString("DefaultConnection");
         }
 
         public IConfigurationRoot Configuration { get; }
