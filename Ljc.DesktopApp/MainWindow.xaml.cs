@@ -68,11 +68,12 @@ namespace Ljc.DesktopApp
 
                         if (hasException)//child thread has exception
                         {
-                            throw exception;
-                            continue;
+                            //throw exception;
+                            //continue;
                         }
 
-                        if (checkResult != "true")
+                        bool anygoing;
+                        if (bool.TryParse(checkResult, out anygoing) && !anygoing)
                         {
                             this.Dispatcher.BeginInvoke((Action)delegate ()
                             {
@@ -85,7 +86,7 @@ namespace Ljc.DesktopApp
                     }
                     catch (Exception ex)
                     {
-                        throw ex;
+                        //throw ex;
                     }
                 }
             });
