@@ -13,6 +13,10 @@ namespace Ljc.DesktopApp
     {
         DispatcherTimer timer;
         public double EndTop { get; set; }
+        /// <summary>
+        /// 是否重新启动蕃茄时间
+        /// </summary>
+        public bool RestartTomatoTimer = true;
         public TaskbarNotifier(string title, string content)
         {
             InitializeComponent();
@@ -25,14 +29,22 @@ namespace Ljc.DesktopApp
 
         public void Image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            this.IsEnabled = false;
+            RestartTomatoTimer = true;
+            HideWin();
+        }
 
+        public void HideWin()
+        {
+            this.IsEnabled = false;
             mGrid.OpacityMask = this.Resources["ClosedBrush"] as LinearGradientBrush;
             Storyboard std = this.Resources["ClosedStoryboard"] as Storyboard;
             std.Completed += delegate { this.Hide(); };
-
             std.Begin();
-            
+        }
+
+        public void ChangeTip(string tip)
+        {
+            contentTxt.Text = tip;
         }
 
     }

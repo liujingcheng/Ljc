@@ -16,6 +16,12 @@ namespace Ljc.DesktopApp
     {
         public static Ljc.DesktopApp.TaskbarNotifier MyTaskbarNotifier = new Ljc.DesktopApp.TaskbarNotifier("提示", "请记录时间！");
         public static DispatcherTimer Timer = new DispatcherTimer();
+        /// <summary>
+        /// 蕃茄时间25分钟
+        /// </summary>
+        private int _tomatoTimeSpan = 25;
+
+        private DispatcherTimer _tomatoTimer = new DispatcherTimer();
 
         public MainWindow()
         {
@@ -24,11 +30,51 @@ namespace Ljc.DesktopApp
 
             Timer.Interval = TimeSpan.FromSeconds(3);
             Timer.Tick += new EventHandler(HideNotifWin);
+
+            _tomatoTimer.Interval = TimeSpan.FromMinutes(_tomatoTimeSpan);
+            _tomatoTimer.Tick += new EventHandler(NoticeTomatoTimeout);
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             this.Hide();
+            CheckIsAnyTaskGoing();
+        }
+
+        private void HideNotifWin(object sender, System.EventArgs e)
+        {
+            MyTaskbarNotifier.HideWin();
+            Timer.Stop();
+        }
+
+        private void NoticeTomatoTimeout(object sender, System.EventArgs e)
+        {
+            MyTaskbarNotifier.ChangeTip("蕃茄时间到了！");
+            MyTaskbarNotifier.Show();
+            _tomatoTimer.Stop();
+        }
+
+        Thread threadPlay = null;
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            //threadPlay = new Thread(new ThreadStart(playsound));
+            //threadPlay.Start();
+            string title = titleTxt.Text;
+            string content = contentTxt.Text;
+            Ljc.DesktopApp.TaskbarNotifier taskbarnotifier = new Ljc.DesktopApp.TaskbarNotifier(title, content);
+            taskbarnotifier.Show();
+        }
+        private void playsound()
+        {
+            string soundName = "msg.wav";
+            //PlaySound.Play(soundName);
+            threadPlay.Abort();
+        }
+
+
+
+        private void CheckIsAnyTaskGoing()
+        {
             Task.Factory.StartNew(() =>
             {
                 while (true)
@@ -73,13 +119,27 @@ namespace Ljc.DesktopApp
                         }
 
                         bool anygoing;
-                        if (bool.TryParse(checkResult, out anygoing) && !anygoing)
+                        if (bool.TryParse(checkResult, out anygoing))
                         {
-                            this.Dispatcher.BeginInvoke((Action)delegate ()
+                            if (!anygoing)
                             {
-                                MyTaskbarNotifier.Show();
-                                Timer.Start();
-                            });
+                                _tomatoTimer.Stop();
+
+                                this.Dispatcher.BeginInvoke((Action)delegate ()
+                                {
+                                    MyTaskbarNotifier.ChangeTip("请记录时间！");
+                                    MyTaskbarNotifier.Show();
+                                    Timer.Start();
+                                });
+                            }
+                            else
+                            {
+                                if (MyTaskbarNotifier.RestartTomatoTimer)
+                                {
+                                    _tomatoTimer.Start();
+                                    MyTaskbarNotifier.RestartTomatoTimer = false;
+                                }
+                            }
                         }
                         Thread.Sleep(60000);
 
@@ -90,29 +150,6 @@ namespace Ljc.DesktopApp
                     }
                 }
             });
-        }
-
-        private void HideNotifWin(object sender, System.EventArgs e)
-        {
-            MyTaskbarNotifier.Image_MouseLeftButtonDown(null, null);
-            Timer.Stop();
-        }
-
-        Thread threadPlay = null;
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            //threadPlay = new Thread(new ThreadStart(playsound));
-            //threadPlay.Start();
-            string title = titleTxt.Text;
-            string content = contentTxt.Text;
-            Ljc.DesktopApp.TaskbarNotifier taskbarnotifier = new Ljc.DesktopApp.TaskbarNotifier(title, content);
-            taskbarnotifier.Show();
-        }
-        private void playsound()
-        {
-            string soundName = "msg.wav";
-            //PlaySound.Play(soundName);
-            threadPlay.Abort();
         }
     }
 }
