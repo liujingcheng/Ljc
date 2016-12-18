@@ -35,7 +35,6 @@ namespace Ljc.DesktopApp
 
         public void HideWin()
         {
-            this.IsEnabled = false;
             mGrid.OpacityMask = this.Resources["ClosedBrush"] as LinearGradientBrush;
             Storyboard std = this.Resources["ClosedStoryboard"] as Storyboard;
             std.Completed += delegate { this.Hide(); };
