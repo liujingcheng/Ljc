@@ -41,6 +41,8 @@ namespace Ljc.DesktopApp
         {
             this.Hide();
             CheckIsAnyTaskGoing();
+            RecurringTip();
+            SpecificTimeTip();
         }
 
         #endregion
@@ -120,6 +122,53 @@ namespace Ljc.DesktopApp
                     }
                 }
             });
+        }
+
+        /// <summary>
+        /// 循环提示
+        /// </summary>
+        private void RecurringTip()
+        {
+            int i = 0;
+            string[] tips = { "谨慎编程，一朝不慎满盘皆输！", "先写出思路再动手！", "提高效率，完成计划！" };
+            DispatcherTimer timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromHours(1)
+            };
+            timer.Tick += delegate
+            {
+                ShowTip(tips[i]);
+                if (DateTime.Now.Hour >= 19)
+                {
+                    Thread.Sleep(60000);
+                    ShowTip("不要急着赶进度，注重学习与成长！");
+                }
+                i++;
+                if (i == tips.Length)
+                {
+                    i = 0;
+                }
+            };
+            timer.Start();
+        }
+
+        /// <summary>
+        /// 定点提示
+        /// </summary>
+        private void SpecificTimeTip()
+        {
+            DispatcherTimer timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMinutes(1)
+            };
+            timer.Tick += delegate
+            {
+                if (DateTime.Now.Hour >= 23)
+                {
+                    ShowTip("要停止写代码了！");
+                }
+            };
+            timer.Start();
         }
 
         #endregion
