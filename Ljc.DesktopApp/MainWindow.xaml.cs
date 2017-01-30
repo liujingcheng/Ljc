@@ -23,6 +23,8 @@ namespace Ljc.DesktopApp
 
         private DispatcherTimer _tomatoTimer = new DispatcherTimer();
 
+        #region 初始化
+
         public MainWindow()
         {
             InitializeComponent();
@@ -41,37 +43,13 @@ namespace Ljc.DesktopApp
             CheckIsAnyTaskGoing();
         }
 
-        private void HideNotifWin(object sender, System.EventArgs e)
-        {
-            MyTaskbarNotifier.HideWin();
-            Timer.Stop();
-        }
+        #endregion
 
-        private void NoticeTomatoTimeout(object sender, System.EventArgs e)
-        {
-            ShowTip("蕃茄时间到了！", false);
-            _tomatoTimer.Stop();
-        }
+        #region 主方法
 
-        Thread threadPlay = null;
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            //threadPlay = new Thread(new ThreadStart(playsound));
-            //threadPlay.Start();
-            string title = titleTxt.Text;
-            string content = contentTxt.Text;
-            Ljc.DesktopApp.TaskbarNotifier taskbarnotifier = new Ljc.DesktopApp.TaskbarNotifier(title, content);
-            taskbarnotifier.Show();
-        }
-        private void playsound()
-        {
-            string soundName = "msg.wav";
-            //PlaySound.Play(soundName);
-            threadPlay.Abort();
-        }
-
-
-
+        /// <summary>
+        /// 检查是否有任务在进行,没有要提示.若番茄时间到了要提示.
+        /// </summary>
         private void CheckIsAnyTaskGoing()
         {
             Task.Factory.StartNew(() =>
@@ -144,6 +122,32 @@ namespace Ljc.DesktopApp
             });
         }
 
+        #endregion
+
+        #region 辅助方法
+
+        /// <summary>
+        /// 隐藏提示窗体
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void HideNotifWin(object sender, System.EventArgs e)
+        {
+            MyTaskbarNotifier.HideWin();
+            Timer.Stop();
+        }
+
+        /// <summary>
+        /// 提示蕃茄时间到了
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void NoticeTomatoTimeout(object sender, System.EventArgs e)
+        {
+            ShowTip("蕃茄时间到了！", false);
+            _tomatoTimer.Stop();
+        }
+
         /// <summary>
         /// 桌面右下角显示提示信息
         /// </summary>
@@ -161,5 +165,7 @@ namespace Ljc.DesktopApp
                 }
             });
         }
+
+        #endregion
     }
 }
