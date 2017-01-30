@@ -206,6 +206,10 @@ namespace Ljc.DesktopApp
         {
             this.Dispatcher.BeginInvoke((Action)delegate ()
             {
+                while (MyTaskbarNotifier.IsVisible)
+                {
+                    Thread.Sleep(5000);
+                }
                 MyTaskbarNotifier.ChangeTip(tip);
                 MyTaskbarNotifier.Show();
                 if (autoHide)
