@@ -129,27 +129,30 @@ namespace Ljc.DesktopApp
         /// </summary>
         private void RecurringTip()
         {
-            int i = 0;
-            string[] tips = { "谨慎编程，一朝不慎满盘皆输！", "先写出思路再动手！", "提高效率，完成计划！" };
-            DispatcherTimer timer = new DispatcherTimer
+            Task.Factory.StartNew(() =>
             {
-                Interval = TimeSpan.FromHours(1)
-            };
-            timer.Tick += delegate
-            {
-                ShowTip(tips[i]);
-                if (DateTime.Now.Hour >= 19)
+                int i = 0;
+                string[] tips = { "谨慎编程，一朝不慎满盘皆输！", "先写出思路再动手！", "提高效率，完成计划！" };
+                DispatcherTimer timer = new DispatcherTimer
                 {
-                    Thread.Sleep(60000);
-                    ShowTip("不要急着赶进度，注重学习与成长！");
-                }
-                i++;
-                if (i == tips.Length)
+                    Interval = TimeSpan.FromHours(1)
+                };
+                timer.Tick += delegate
                 {
-                    i = 0;
-                }
-            };
-            timer.Start();
+                    ShowTip(tips[i]);
+                    if (DateTime.Now.Hour >= 19)
+                    {
+                        Thread.Sleep(60000);
+                        ShowTip("不要急着赶进度，注重学习与成长！");
+                    }
+                    i++;
+                    if (i == tips.Length)
+                    {
+                        i = 0;
+                    }
+                };
+                timer.Start();
+            });
         }
 
         /// <summary>
@@ -157,18 +160,21 @@ namespace Ljc.DesktopApp
         /// </summary>
         private void SpecificTimeTip()
         {
-            DispatcherTimer timer = new DispatcherTimer
+            Task.Factory.StartNew(() =>
             {
-                Interval = TimeSpan.FromMinutes(1)
-            };
-            timer.Tick += delegate
-            {
-                if (DateTime.Now.Hour >= 23)
+                DispatcherTimer timer = new DispatcherTimer
                 {
-                    ShowTip("要停止写代码了！");
-                }
-            };
-            timer.Start();
+                    Interval = TimeSpan.FromMinutes(1)
+                };
+                timer.Tick += delegate
+                {
+                    if (DateTime.Now.Hour >= 23)
+                    {
+                        ShowTip("要停止写代码了！");
+                    }
+                };
+                timer.Start();
+            });
         }
 
         #endregion
@@ -204,18 +210,21 @@ namespace Ljc.DesktopApp
         /// <param name="autoHide">提示是否自动消失</param>
         private void ShowTip(string tip, bool autoHide = true)
         {
-            this.Dispatcher.BeginInvoke((Action)delegate ()
+            Task.Factory.StartNew(() =>
             {
-                while (MyTaskbarNotifier.IsVisible)
+                this.Dispatcher.BeginInvoke((Action)delegate ()
                 {
-                    Thread.Sleep(5000);
-                }
-                MyTaskbarNotifier.ChangeTip(tip);
-                MyTaskbarNotifier.Show();
-                if (autoHide)
-                {
-                    Timer.Start();
-                }
+                    while (MyTaskbarNotifier.IsVisible)
+                    {
+                        Thread.Sleep(5000);
+                    }
+                    MyTaskbarNotifier.ChangeTip(tip);
+                    MyTaskbarNotifier.Show();
+                    if (autoHide)
+                    {
+                        Timer.Start();
+                    }
+                });
             });
         }
 
