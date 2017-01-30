@@ -129,30 +129,26 @@ namespace Ljc.DesktopApp
         /// </summary>
         private void RecurringTip()
         {
-            Task.Factory.StartNew(() =>
+            int i = 0;
+            string[] tips = { "谨慎编程，一朝不慎满盘皆输！", "先写出思路再动手！", "提高效率，完成计划！" };
+            DispatcherTimer timer = new DispatcherTimer
             {
-                int i = 0;
-                string[] tips = { "谨慎编程，一朝不慎满盘皆输！", "先写出思路再动手！", "提高效率，完成计划！" };
-                DispatcherTimer timer = new DispatcherTimer
+                Interval = TimeSpan.FromHours(1)
+            };
+            timer.Tick += delegate
+            {
+                ShowTip(tips[i]);
+                if (DateTime.Now.Hour >= 19)
                 {
-                    Interval = TimeSpan.FromHours(1)
-                };
-                timer.Tick += delegate
+                    ShowTip("不要急着赶进度，注重学习与成长！");
+                }
+                i++;
+                if (i == tips.Length)
                 {
-                    ShowTip(tips[i]);
-                    if (DateTime.Now.Hour >= 19)
-                    {
-                        Thread.Sleep(60000);
-                        ShowTip("不要急着赶进度，注重学习与成长！");
-                    }
-                    i++;
-                    if (i == tips.Length)
-                    {
-                        i = 0;
-                    }
-                };
-                timer.Start();
-            });
+                    i = 0;
+                }
+            };
+            timer.Start();
         }
 
         /// <summary>
@@ -160,21 +156,18 @@ namespace Ljc.DesktopApp
         /// </summary>
         private void SpecificTimeTip()
         {
-            Task.Factory.StartNew(() =>
+            DispatcherTimer timer = new DispatcherTimer
             {
-                DispatcherTimer timer = new DispatcherTimer
+                Interval = TimeSpan.FromMinutes(1)
+            };
+            timer.Tick += delegate
+            {
+                if (DateTime.Now.Hour >= 23)
                 {
-                    Interval = TimeSpan.FromMinutes(1)
-                };
-                timer.Tick += delegate
-                {
-                    if (DateTime.Now.Hour >= 23)
-                    {
-                        ShowTip("要停止写代码了！");
-                    }
-                };
-                timer.Start();
-            });
+                    ShowTip("要停止写代码了！");
+                }
+            };
+            timer.Start();
         }
 
         #endregion
