@@ -123,8 +123,6 @@ namespace Ljc.DesktopApp
                         {
                             if (!anygoing)
                             {
-                                _tomatoTimer.Stop();
-
                                 this.Dispatcher.BeginInvoke((Action)delegate ()
                                 {
                                     MyTaskbarNotifier.ChangeTip("请记录时间！");
@@ -141,7 +139,7 @@ namespace Ljc.DesktopApp
                                 }
                             }
                         }
-                        Thread.Sleep(60000);
+                        Thread.Sleep(10000);
 
                     }
                     catch (Exception ex)
