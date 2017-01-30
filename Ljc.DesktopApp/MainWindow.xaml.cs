@@ -49,8 +49,7 @@ namespace Ljc.DesktopApp
 
         private void NoticeTomatoTimeout(object sender, System.EventArgs e)
         {
-            MyTaskbarNotifier.ChangeTip("蕃茄时间到了！");
-            MyTaskbarNotifier.Show();
+            ShowTip("蕃茄时间到了！", false);
             _tomatoTimer.Stop();
         }
 
@@ -123,12 +122,7 @@ namespace Ljc.DesktopApp
                         {
                             if (!anygoing)
                             {
-                                this.Dispatcher.BeginInvoke((Action)delegate ()
-                                {
-                                    MyTaskbarNotifier.ChangeTip("请记录时间！");
-                                    MyTaskbarNotifier.Show();
-                                    Timer.Start();
-                                });
+                                ShowTip("请记录时间！");
                             }
                             else
                             {
@@ -146,6 +140,24 @@ namespace Ljc.DesktopApp
                     {
                         //throw ex;
                     }
+                }
+            });
+        }
+
+        /// <summary>
+        /// 桌面右下角显示提示信息
+        /// </summary>
+        /// <param name="tip">提示信息</param>
+        /// <param name="autoHide">提示是否自动消失</param>
+        private void ShowTip(string tip, bool autoHide = true)
+        {
+            this.Dispatcher.BeginInvoke((Action)delegate ()
+            {
+                MyTaskbarNotifier.ChangeTip(tip);
+                MyTaskbarNotifier.Show();
+                if (autoHide)
+                {
+                    Timer.Start();
                 }
             });
         }
