@@ -207,9 +207,10 @@ namespace Ljc.DesktopApp
             {
                 this.Dispatcher.BeginInvoke((Action)delegate ()
                 {
-                    while (MyTaskbarNotifier.IsVisible)
+                    if (MyTaskbarNotifier.IsVisible)
+                    //如果还有提示未关闭，则直接返回，舍弃新提示（用线程睡眠等待会导致提示界面卡死，即使是另开线程的）
                     {
-                        Thread.Sleep(5000);
+                        return;
                     }
                     MyTaskbarNotifier.ChangeTip(tip);
                     MyTaskbarNotifier.Show();
