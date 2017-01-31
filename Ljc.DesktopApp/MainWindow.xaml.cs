@@ -113,7 +113,7 @@ namespace Ljc.DesktopApp
                                 }
                             }
                         }
-                        Thread.Sleep(10000);
+                        Thread.Sleep(30000);
 
                     }
                     catch (Exception ex)
