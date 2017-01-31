@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -9,6 +10,7 @@ using GalaSoft.MvvmLight.Command;
 using Ljc.Common;
 using Ljc.Schedule.Models;
 using Microsoft.Win32;
+using NPOI.OpenXml4Net.OPC;
 
 namespace Ljc.Schedule.ViewModel
 {
@@ -16,6 +18,25 @@ namespace Ljc.Schedule.ViewModel
     {
         private IList<TaskModel> _taskModels;
         private string _sourceFileName;
+        /// <summary>
+        /// 排计划时是否排除周末两天
+        /// </summary>
+        private bool _isExcludeWeekend = true;
+
+        /// <summary>
+        /// 要包含的日期集合
+        /// </summary>
+        private List<DateTime> _includeDays;
+        /// <summary>
+        /// 要排除的日期集合
+        /// </summary>
+        private List<DateTime> _excludeDays;
+
+        public AutoPlanViewModel()
+        {
+            XmlParse(out _includeDays, out _excludeDays);
+            bool.TryParse(ConfigurationManager.AppSettings["exclude-weekend"], out _isExcludeWeekend);
+        }
 
         /// <summary>
         /// 导入计划Excel
@@ -265,6 +286,88 @@ namespace Ljc.Schedule.ViewModel
                 gapDays += 0.5;
             }
             return false;
+        }
+
+        /// <summary>
+        /// 读取自定义日期配置文件
+        /// </summary>
+        private void XmlParse(out List<DateTime> includeDays, out List<DateTime> excludeDays)
+        {
+            includeDays = new List<DateTime>();
+            excludeDays = new List<DateTime>();
+            string rootPath = AppDomain.CurrentDomain.SetupInformation.ApplicationBase;//获取或设置包含该应用程序的目录的名称。
+            var xmlParse = new XmlParse(Path.Combine(rootPath, @"CustomDate.xml"));
+            var customdate = xmlParse.Document.Element("customdate");
+            if (customdate != null)
+            {
+                var includeDate = customdate.Element("includedate");
+                if (includeDate != null)
+                {
+                    foreach (var date in includeDate.Elements("date"))
+                    {
+                        try
+                        {
+                            var startDateStr = date.Attribute("startdate").Value;
+                            var startDate = Convert.ToDateTime(startDateStr);
+                            var endDateStr = date.Attribute("enddate").Value;
+                            var endDate = Convert.ToDateTime(endDateStr);
+                            _includeDays.AddRange(GetAllDatesBetween(startDate, endDate));
+                        }
+                        catch (Exception ex)
+                        {
+                        }
+                    }
+                    _includeDays = _includeDays.Distinct().ToList();
+                }
+
+                var excludeDate = customdate.Element("excludedate");
+                if (excludeDate != null)
+                {
+                    foreach (var date in excludeDate.Elements("date"))
+                    {
+                        try
+                        {
+                            var startDateStr = date.Attribute("startdate").Value;
+                            var startDate = Convert.ToDateTime(startDateStr);
+                            var endDateStr = date.Attribute("enddate").Value;
+                            var endDate = Convert.ToDateTime(endDateStr);
+                            _excludeDays.AddRange(GetAllDatesBetween(startDate, endDate));
+                        }
+                        catch (Exception ex)
+                        {
+                        }
+                    }
+                    _excludeDays = _excludeDays.Distinct().ToList();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 获取两个日期间所有日期(含本身)
+        /// </summary>
+        /// <param name="date1"></param>
+        /// <param name="date2"></param>
+        /// <returns></returns>
+        private List<DateTime> GetAllDatesBetween(DateTime date1, DateTime date2)
+        {
+            var list = new List<DateTime>();
+
+            var minDate = date1;
+            var maxDate = date2;
+            if (date1 > date2)
+            {
+                minDate = date2;
+                maxDate = date1;
+            }
+
+            list.Add(minDate);
+            while (minDate < maxDate)
+            {
+                minDate = minDate.AddDays(1);
+                list.Add(minDate);
+            }
+
+            return list;
         }
 
     }
