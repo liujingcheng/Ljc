@@ -1,0 +1,15 @@
+﻿<Window x:Class="Ljc.Schedule.AutoPlan"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="AutoPlan" Height="500" Width="800"
+        DataContext="{Binding AutoPlanViewModel,Source={StaticResource Locator}}">
+    <Grid>
+        <StackPanel >
+            <Button Width="100" Height="50" Margin="50" Command="{Binding ImportPlanCommand}">导入</Button>
+            <Button Width="100" Height="50" Command="{Binding ExportPlanCommand}">导出</Button>
+        </StackPanel>
+    </Grid>
+</Window>
