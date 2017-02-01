@@ -61,7 +61,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DateComparer.cs" />
     <Compile Include="ExcelLib\Common\DataTypeEnum.cs" />
     <Compile Include="ExcelLib\Common\DocumentSummary.cs" />
     <Compile Include="ExcelLib\Common\ExcelColumInfo.cs" />

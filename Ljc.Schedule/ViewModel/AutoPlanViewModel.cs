@@ -9,8 +9,8 @@ using CanYouLib.ExcelLib.Utility;
 using GalaSoft.MvvmLight.Command;
 using Ljc.Common;
 using Ljc.Schedule.Models;
+using Ljc.Schedule.Tool;
 using Microsoft.Win32;
-using NPOI.OpenXml4Net.OPC;
 
 namespace Ljc.Schedule.ViewModel
 {
@@ -18,24 +18,60 @@ namespace Ljc.Schedule.ViewModel
     {
         private IList<TaskModel> _taskModels;
         private string _sourceFileName;
-        /// <summary>
-        /// 排计划时是否排除周末两天
-        /// </summary>
-        private bool _isExcludeWeekend = true;
 
         /// <summary>
-        /// 要包含的日期集合
+        /// 获取综合了所有用户自定义的配置之后最终要被排除的所有日期段
         /// </summary>
-        private List<DateTime> _includeDays;
-        /// <summary>
-        /// 要排除的日期集合
-        /// </summary>
-        private List<DateTime> _excludeDays;
-
-        public AutoPlanViewModel()
+        /// <param name="firstStartTime">计划编排的起始日期</param>
+        /// <returns></returns>
+        private List<CoherentDateRange> GetAllExcludedDateRanges(DateTime firstStartTime)
         {
-            XmlParse(out _includeDays, out _excludeDays);
-            bool.TryParse(ConfigurationManager.AppSettings["exclude-weekend"], out _isExcludeWeekend);
+            bool excludeWeekend;// 排计划时是否排除周末两天
+            List<DateTime> includeDays;//要包含的日期集合
+            List<DateTime> excludeDays;// 要排除的日期集合
+            List<CoherentDateRange> customIncludeDateRanges;// 用户自定义要被包含的日期段
+            List<CoherentDateRange> customExcludeDateRanges;// 用户自定义要被排除的日期段
+
+            CustomDateXmlParse(out includeDays, out excludeDays, out excludeWeekend, out customIncludeDateRanges, out customExcludeDateRanges);
+
+            //如果指定了要排除周末,那没被包含的周末要加入到被排除列表里
+            if (excludeWeekend)
+            {
+                var weekends = GetAllWeekends(firstStartTime, 365);//默认取未来一年内的所有周末
+                foreach (var date in weekends)
+                {
+                    if (!excludeDays.Contains(date))
+                    {
+                        excludeDays.Add(date);
+                    }
+                }
+            }
+
+            //用户指定要包含的日期不能排除
+            foreach (var includeDay in includeDays)
+            {
+                if (excludeDays.Contains(includeDay))
+                {
+                    excludeDays.Remove(includeDay);
+                }
+            }
+
+            var excludedDateRanges = GetAllCoherentDateRanges(excludeDays);
+
+            //将用户自定义要被排除的日期段的备注合并到最终要被排除的日期段
+            foreach (var excludedDateRange in excludedDateRanges)
+            {
+                foreach (var customExcludeDateRange in customExcludeDateRanges)
+                {
+                    if (customExcludeDateRange.StartDate >= excludedDateRange.StartDate
+                        && customExcludeDateRange.EndDate <= excludedDateRange.EndDate)
+                    {
+                        excludedDateRange.Remark += customExcludeDateRange.Remark;
+                    }
+                }
+            }
+
+            return excludedDateRanges;
         }
 
         /// <summary>
@@ -58,7 +94,19 @@ namespace Ljc.Schedule.ViewModel
                            var ds = importExcel.ImportDataSet(_sourceFileName, false, 1, 0);
                            var dt = ds.Tables[0];
                            _taskModels = ModelConverter<TaskModel>.ConvertToModel(dt);
-                           CalSchedule(_taskModels);
+                           if (_taskModels.Count == 0)
+                           {
+                               return;
+                           }
+                           DateTime firstStartTime;
+                           if (!DateTime.TryParse(_taskModels.First().PlanStartTime, out firstStartTime))
+                           {
+                               MessageBox.Show("首记录起始日期缺失或格式不正确，请检查!");
+                               return;
+                           }
+
+                           var excludedDateRanges = GetAllExcludedDateRanges(firstStartTime);
+                           CalSchedule(_taskModels, excludedDateRanges);
                        }
                    }
                    catch (Exception)
@@ -127,31 +175,13 @@ namespace Ljc.Schedule.ViewModel
         }
 
         /// <summary>
-        /// 自动排期（单任务支持的工作量范围：0.5-7）
+        /// 自动排期（单任务支持的工作量最小粒度：0.5人/天）
         /// </summary>
-        /// <param name="list"></param>
-        private void CalSchedule(IList<TaskModel> list)
+        /// <param name="list">任务列表</param>
+        /// <param name="excludedDateRanges">综合了所有用户自定义的配置之后最终要被排除的所有日期段</param>
+        private void CalSchedule(IList<TaskModel> list, List<CoherentDateRange> excludedDateRanges)
         {
-            var members = new List<string>();
-            var memberStrList = list.Select(p => p.TaskMember).Distinct().ToList();
-            foreach (var memberStr in memberStrList)
-            {
-                if (memberStr.Contains("、"))
-                {
-                    var subMembers = memberStr.Split('、').ToList();
-                    foreach (var subMember in subMembers)
-                    {
-                        if (!members.Contains(subMember))
-                        {
-                            members.Add(subMember);
-                        }
-                    }
-                }
-                else if (!members.Contains(memberStr))
-                {
-                    members.Add(memberStr);
-                }
-            }
+            var members = list.Select(p => p.TaskMember).Distinct().ToList();
 
             foreach (var taskModel in list)
             {
@@ -160,15 +190,15 @@ namespace Ljc.Schedule.ViewModel
             foreach (var member in members)
             {
                 var subList = list.Where(p => p.TaskMember.Contains(member)).ToList();
-                if (subList.Count == 0 || subList.First().PlanStartTime == null)
+                DateTime firstStartTime;
+                if (!DateTime.TryParse(subList.First().PlanStartTime, out firstStartTime))
                 {
+                    MessageBox.Show(member + "的起始日期缺失或格式不正确，请检查!");
                     continue;
                 }
 
                 string timeFormat = "yyyy/MM/dd";
                 //string timeFormat = "yyyy/MM/dd HH:mm:ss";
-                string dateFormat = "yyyy/MM/dd";
-                var firstStartTime = DateTime.Parse(subList.First().PlanStartTime);
                 DateTime lastEndTime = firstStartTime;
                 foreach (var taskModel in subList)
                 {
@@ -176,88 +206,31 @@ namespace Ljc.Schedule.ViewModel
 
                     var startTime = lastEndTime;
                     taskModel.PlanStartTime = startTime.ToString(timeFormat);
-                    var spentDays = double.Parse(taskModel.PlanSpentDays);
-
-
-                    if (startTime.AddDays(spentDays).Hour != 0 && startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2016/12/08"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2016/12/09"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2016/12/10"
-                            || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2016/12/11")
-                    //搬家2天+周末2天
+                    double spentDays;
+                    if (!double.TryParse(taskModel.PlanSpentDays, out spentDays))
                     {
-                        spentDays += 4;
-                        taskModel.HolidayRemark = "搬家2天+周末2天";
+                        MessageBox.Show("有些任务的工作量缺失或格式不正确，请检查！");
+                        return;
                     }
-                    else if (startTime.AddDays(spentDays).Hour != 0 && startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2016/12/31"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/01"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/02")
-                    //元旦放假3天
+                    var excludedDateRange = GetPossibleCrossCoherentDateRanges(startTime, spentDays, excludedDateRanges).FirstOrDefault();//TODO:将来要支持工作量跨跃多个日期段的情况,暂时还不支持
+                    if (excludedDateRange != null && HasCrossedDateRange(startTime, spentDays, excludedDateRange))
                     {
-                        spentDays += 3;
-                        taskModel.HolidayRemark = "元旦放假3天";
+                        spentDays += excludedDateRange.TotalDays;
+                        taskModel.HolidayRemark += excludedDateRange.Remark;
                     }
-                    else if (startTime.AddDays(spentDays).Hour != 0 && startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2016/01/21"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/22"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/23"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/24"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/25"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/26"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/27"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/28"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/29"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/30"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/31"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/02/01"
-                          || startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/02/02")
-                    //春节假期
-                    {
-                        spentDays += 13;
-                        taskModel.HolidayRemark = "春节假期";
-                    }
-                    else if (HasCrossedWeekend(startTime, spentDays))//TODO:暂时只支持一个周末的跨跃，多周末待以后支持（或者约束工作量不能超过一周也行）
-                    //周末两天休假
-                    {
-                        spentDays += 2;
-                        taskModel.HolidayRemark = "周末两天休假";
-                    }
-
                     var endTime = startTime.AddDays(spentDays);
-
-                    //.Hour == 0代表它是零点。如果endTime正好是周六零点，其实它也就是周五结束，所以从日期上看的话要退后一天才符合常识理解
+                    //.Hour == 0代表它是零点。如果endTime正好是周六零点，其实它也就是周五结束，所以从日期上看的话要退后一天才符合常识理解（其它假期也一样）
                     var endDateStr = endTime.Hour == 0 ? endTime.AddDays(-1).ToString(timeFormat) : endTime.ToString(timeFormat);
                     if (taskModel.PlanEndTime == null)
                     {
                         taskModel.PlanEndTime = endDateStr;
                     }
-                    else if (taskModel.PlanEndTime != endDateStr)
-                    //多人任务但排的计划时间不一致时，分别显示
-                    {
-                        taskModel.PlanEndTime += "\n" + member + ":" + endDateStr;
-                    }
 
-                    if (startTime.AddDays(spentDays).Hour == 0 && startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2016/12/08")
-                    //搬家2天+周末2天
+                    if (excludedDateRange != null && startTime.AddDays(spentDays).Hour == 0 && startTime.AddDays(spentDays).Date == excludedDateRange.StartDate)
+                    //.Hour == 0代表它是零点。如果endTime正好是周六零点，其实它也就是周五结束，且下个任务应从下周一开始
                     {
-                        lastEndTime = endTime.AddDays(4);
-                        taskModel.HolidayRemark = endDateStr + "之后是搬家2天+周末2天";
-                    }
-                    else if (startTime.AddDays(spentDays).Hour == 0 && startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2016/12/31")
-                    //元旦放假3天
-                    {
-                        lastEndTime = endTime.AddDays(3);
-                        taskModel.HolidayRemark = endDateStr + "之后是元旦3天假期";
-                    }
-                    else if (startTime.AddDays(spentDays).Hour == 0 && startTime.AddDays(spentDays).Date.ToString(dateFormat) == "2017/01/21")
-                    //春节假期
-                    {
-                        lastEndTime = endTime.AddDays(13);
-                        taskModel.HolidayRemark = endDateStr + "春节假期";
-                    }
-                    else if (endTime.Hour == 0 && endTime.DayOfWeek == DayOfWeek.Saturday)//.Hour == 0代表它是零点。如果endTime正好是周六零点，其实它也就是周五结束，且下个任务应从下周一开始
-                    //周末两天休假
-                    {
-                        lastEndTime = endTime.AddDays(2);
-                        taskModel.HolidayRemark = endDateStr + "之后是周末2天假期";
+                        lastEndTime = endTime.AddDays(excludedDateRange.TotalDays);
+                        taskModel.HolidayRemark += endDateStr + "之后是" + excludedDateRange.Remark;
                     }
                     else
                     {
@@ -269,7 +242,40 @@ namespace Ljc.Schedule.ViewModel
         }
 
         /// <summary>
-        /// 是否有跨跃了周末(目前只考虑到跨一个周末的情况）
+        /// 找出所有可能跨跃的连续日期段
+        /// </summary>
+        /// <param name="startTime">起始时间</param>
+        /// <param name="spentDays">所需工作量</param>
+        /// <param name="dateRanges">所有连续日期段</param>
+        /// <returns></returns>
+        private List<CoherentDateRange> GetPossibleCrossCoherentDateRanges(DateTime startTime, double spentDays,
+            List<CoherentDateRange> dateRanges)
+        {
+            return dateRanges.Where(p => startTime <= p.EndDate && startTime.AddDays(spentDays) >= p.StartDate).ToList();
+        }
+
+        /// <summary>
+        /// 中间是否经过了一个日期段
+        /// </summary>
+        /// <returns></returns>
+        private bool HasCrossedDateRange(DateTime startTime, double spentDays, CoherentDateRange dateRange)
+        {
+            var gapDays = 0.5;
+            while (gapDays <= spentDays)
+            {
+                var addedStart = startTime.AddDays(gapDays);
+                if (addedStart.Hour != 0 && addedStart.Date == dateRange.StartDate//.Hour != 0代表其是从中午开始的情况（工作量是半天的）,如果.Hour==0代表它刚好是前一天晚上完成的,所以不算跨跃
+                               || addedStart.Date != dateRange.StartDate && addedStart.Date <= dateRange.EndDate)//要把StartDate排除
+                {
+                    return true;
+                }
+                gapDays += 0.5;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 中间是否经过了一个周末(目前只考虑到跨一个周末的情况）
         /// </summary>
         /// <returns></returns>
         private bool HasCrossedWeekend(DateTime startTime, double spentDays)
@@ -289,55 +295,93 @@ namespace Ljc.Schedule.ViewModel
         }
 
         /// <summary>
-        /// 读取自定义日期配置文件
+        /// 解析自定义日期配置文件
         /// </summary>
-        private void XmlParse(out List<DateTime> includeDays, out List<DateTime> excludeDays)
+        /// <param name="includeDays">用户自定义要被包含的所有日期</param>
+        /// <param name="excludeDays">用户自定义要被排除的所有日期</param>
+        /// <param name="excludeWeekend">是否排除周末(默认排除)</param>
+        /// <param name="customIncludeDateRanges">用户自定义要被包含的日期段</param>
+        /// <param name="customExcludeDateRanges">用户自定义要被排除的日期段</param>
+        private void CustomDateXmlParse(out List<DateTime> includeDays, out List<DateTime> excludeDays, out bool excludeWeekend,
+            out List<CoherentDateRange> customIncludeDateRanges, out List<CoherentDateRange> customExcludeDateRanges)
         {
             includeDays = new List<DateTime>();
             excludeDays = new List<DateTime>();
+            excludeWeekend = true;
+            customIncludeDateRanges = new List<CoherentDateRange>();
+            customExcludeDateRanges = new List<CoherentDateRange>();
+
             string rootPath = AppDomain.CurrentDomain.SetupInformation.ApplicationBase;//获取或设置包含该应用程序的目录的名称。
             var xmlParse = new XmlParse(Path.Combine(rootPath, @"CustomDate.xml"));
             var customdate = xmlParse.Document.Element("customdate");
             if (customdate != null)
             {
-                var includeDate = customdate.Element("includedate");
+                var excludeWeekendNode = customdate.Element("exclude-weekend");
+                if (excludeWeekendNode != null)
+                {
+                    var excludeWeekendAttr = excludeWeekendNode.Attribute("value");
+                    if (excludeWeekendAttr != null)
+                    {
+                        bool.TryParse(excludeWeekendAttr.Value, out excludeWeekend);
+                    }
+                }
+
+                var includeDate = customdate.Element("include-date");
                 if (includeDate != null)
                 {
                     foreach (var date in includeDate.Elements("date"))
                     {
                         try
                         {
-                            var startDateStr = date.Attribute("startdate").Value;
-                            var startDate = Convert.ToDateTime(startDateStr);
-                            var endDateStr = date.Attribute("enddate").Value;
-                            var endDate = Convert.ToDateTime(endDateStr);
-                            _includeDays.AddRange(GetAllDatesBetween(startDate, endDate));
+                            var startDateStr = date.Attribute("start-date").Value;
+                            var startDate = Convert.ToDateTime(startDateStr).Date;
+                            var endDateStr = date.Attribute("end-date").Value;
+                            var endDate = Convert.ToDateTime(endDateStr).Date;
+                            includeDays.AddRange(GetAllDatesBetween(startDate, endDate));
+
+                            string remark = null;
+                            var remarkAttr = date.Attribute("remark");
+                            if (remarkAttr != null)
+                            {
+                                remark = remarkAttr.Value;
+                            }
+                            customIncludeDateRanges.Add(new CoherentDateRange(startDate, endDate, remark));
                         }
                         catch (Exception ex)
                         {
                         }
                     }
-                    _includeDays = _includeDays.Distinct().ToList();
+                    includeDays = includeDays.Distinct().ToList();
+                    customIncludeDateRanges = customIncludeDateRanges.Distinct(new CoherentDateRangeComparer()).ToList();
                 }
 
-                var excludeDate = customdate.Element("excludedate");
+                var excludeDate = customdate.Element("exclude-date");
                 if (excludeDate != null)
                 {
                     foreach (var date in excludeDate.Elements("date"))
                     {
                         try
                         {
-                            var startDateStr = date.Attribute("startdate").Value;
-                            var startDate = Convert.ToDateTime(startDateStr);
-                            var endDateStr = date.Attribute("enddate").Value;
-                            var endDate = Convert.ToDateTime(endDateStr);
-                            _excludeDays.AddRange(GetAllDatesBetween(startDate, endDate));
+                            var startDateStr = date.Attribute("start-date").Value;
+                            var startDate = Convert.ToDateTime(startDateStr).Date;
+                            var endDateStr = date.Attribute("end-date").Value;
+                            var endDate = Convert.ToDateTime(endDateStr).Date;
+                            excludeDays.AddRange(GetAllDatesBetween(startDate, endDate));
+
+                            string remark = null;
+                            var remarkAttr = date.Attribute("remark");
+                            if (remarkAttr != null)
+                            {
+                                remark = remarkAttr.Value;
+                            }
+                            customExcludeDateRanges.Add(new CoherentDateRange(startDate, endDate, remark));
                         }
                         catch (Exception ex)
                         {
                         }
                     }
-                    _excludeDays = _excludeDays.Distinct().ToList();
+                    excludeDays = excludeDays.Distinct().ToList();
+                    customExcludeDateRanges = customExcludeDateRanges.Distinct(new CoherentDateRangeComparer()).ToList();
                 }
             }
         }
@@ -365,6 +409,64 @@ namespace Ljc.Schedule.ViewModel
             {
                 minDate = minDate.AddDays(1);
                 list.Add(minDate);
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// 给定的所有日期中取所有连续的日期范围
+        /// </summary>
+        /// <param name="rawDates">给定的所有日期</param>
+        /// <returns></returns>
+        private List<CoherentDateRange> GetAllCoherentDateRanges(List<DateTime> rawDates)
+        {
+            var list = new List<CoherentDateRange>();
+            var orderedDates = rawDates.OrderBy(p => p).Select(q => new DateTime(q.Year, q.Month, q.Day)).ToList();//复制一份,不影响原有列表
+
+            if (orderedDates.Count == 2)
+            //只有两个直接返回
+            {
+                list.Add(new CoherentDateRange(orderedDates[0], orderedDates[1]));
+                return list;
+            }
+
+            for (int i = 0, j = 0; i < orderedDates.Count - 1;)
+            {
+                if ((orderedDates[i + 1] - orderedDates[i]).Days > 1)
+                {
+                    list.Add(new CoherentDateRange(orderedDates[j], orderedDates[i > j ? i : i + 1]));
+                    i += i > j ? 1 : 2;
+
+                    j = i;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// 从startDate起取未来futureDays内所有的周末日期
+        /// </summary>
+        /// <param name="startDate">起始日期</param>
+        /// <param name="futureDays">未来多少天内</param>
+        /// <returns></returns>
+        private List<DateTime> GetAllWeekends(DateTime? startDate, int futureDays)
+        {
+            var list = new List<DateTime>();
+
+            DateTime day = startDate ?? DateTime.Now;
+            for (int i = 0; i < futureDays; i++)
+            {
+                if (day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    list.Add(day);
+                }
+                day = day.AddDays(1);
             }
 
             return list;

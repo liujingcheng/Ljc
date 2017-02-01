@@ -96,6 +96,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Tool\CoherentDateRangeComparer.cs" />
+    <Compile Include="Models\CoherentDateRange.cs" />
     <Compile Include="Models\TaskModel.cs" />
     <Compile Include="ViewModel\AutoPlanViewModel.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />

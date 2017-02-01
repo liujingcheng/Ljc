@@ -1,18 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <customdate>
-  <!--要包含的日期-->
-  <includedate>
-    <date startdate="2017-01-30" enddate="2017-01-31"/>
-    <date startdate="2017-01-30" enddate="2017-01-31"/>
-    <date startdate="2017-01-30" enddate="2017-01-31"/>
-    <date startdate="2017-03-31" enddate="2017-04-01"/>
-  </includedate>
-
+  <!--是否排除周末-->
+  <exclude-weekend value="true"/>
   <!--要排除的日期-->
-  <excludedate>
-    <date startdate="2017-01-31" enddate="2017-02-01"/>
-    <date startdate="2017-01-31" enddate="2017-02-01"/>
-    <date startdate="2017-02-10" enddate="2017-02-20"/>
-    <date startdate="2017-02-10" enddate="2017-02-20"/>
-  </excludedate>
+  <exclude-date>
+    <!--格式示例:<date start-date="2017/01/21" end-date="2017/02/02" remark="春节假期"/>-->
+    <date start-date="2017/01/21" end-date="2017/02/02" remark="春节假期"/>
+    <date start-date="2017-04-02" end-date="2017-04-04" remark="清明假期"/>
+  </exclude-date>
+  <!--要包含的日期-->
+  <include-date>
+    <!--格式示例:<date start-date="2017-04-01" end-date="2017-04-01" remark="清明假期补班"/>-->
+    <date start-date="2017-04-01" end-date="2017-04-01" remark="清明假期补班"/>
+  </include-date>
 </customdate>
