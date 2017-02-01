@@ -11,6 +11,7 @@
   <!--要包含的日期-->
   <include-date>
     <!--格式示例:<date start-date="2017-04-01" end-date="2017-04-01" remark="清明假期补班"/>-->
+    <date start-date="2017-02-04" end-date="2017-02-04" remark="春节假期补班"/>
     <date start-date="2017-04-01" end-date="2017-04-01" remark="清明假期补班"/>
   </include-date>
 </customdate>
