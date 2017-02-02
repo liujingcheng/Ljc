@@ -41,7 +41,7 @@ namespace Ljc.Schedule.Models
         {
             StartDate = startDate.Date;
             EndDate = endDate.Date;
-            Remark = remark;
+            Remark = remark ?? string.Empty;
 
             if (StartDate > EndDate)
             {
@@ -50,7 +50,7 @@ namespace Ljc.Schedule.Models
                 EndDate = tempDate;
             }
 
-            if (StartDate.DayOfWeek == DayOfWeek.Saturday || StartDate.DayOfWeek == DayOfWeek.Sunday)
+            if (!Remark.Contains("周末") && StartDate.DayOfWeek == DayOfWeek.Saturday || StartDate.DayOfWeek == DayOfWeek.Sunday)
             {
                 Remark += "周末";
             }

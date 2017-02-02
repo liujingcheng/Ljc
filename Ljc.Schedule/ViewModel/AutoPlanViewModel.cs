@@ -212,12 +212,25 @@ namespace Ljc.Schedule.ViewModel
                         MessageBox.Show("有些任务的工作量缺失或格式不正确，请检查！");
                         return;
                     }
-                    var excludedDateRange = GetPossibleCrossCoherentDateRanges(startTime, spentDays, excludedDateRanges).FirstOrDefault();//TODO:将来要支持工作量跨跃多个日期段的情况,暂时还不支持
-                    if (excludedDateRange != null && HasCrossedDateRange(startTime, spentDays, excludedDateRange))
+
+                    var crossedDateRanges = GetPossibleCrossCoherentDateRanges(startTime, spentDays, excludedDateRanges);
+                    CoherentDateRange excludedDateRange = null;
+                    if (crossedDateRanges.Count > 0)
+                    //将跨跃的假期合并,方便后面endTime的计算
+                    {
+                        excludedDateRange = new CoherentDateRange(crossedDateRanges.First().StartDate,
+                            crossedDateRanges.Last().EndDate,
+                            crossedDateRanges.Aggregate(string.Empty,
+                                (current, range) => current + range.Remark));
+                        spentDays -= excludedDateRange.TotalDays - crossedDateRanges.Sum(p => p.TotalDays);
+                    }
+
+                    if (excludedDateRange != null)
                     {
                         spentDays += excludedDateRange.TotalDays;
                         taskModel.HolidayRemark += excludedDateRange.Remark;
                     }
+
                     var endTime = startTime.AddDays(spentDays);
                     //.Hour == 0代表它是零点。如果endTime正好是周六零点，其实它也就是周五结束，所以从日期上看的话要退后一天才符合常识理解（其它假期也一样）
                     var endDateStr = endTime.Hour == 0 ? endTime.AddDays(-1).ToString(timeFormat) : endTime.ToString(timeFormat);
@@ -226,11 +239,12 @@ namespace Ljc.Schedule.ViewModel
                         taskModel.PlanEndTime = endDateStr;
                     }
 
-                    if (excludedDateRange != null && startTime.AddDays(spentDays).Hour == 0 && startTime.AddDays(spentDays).Date == excludedDateRange.StartDate)
+                    var nextExcludedDateRange = excludedDateRanges.FirstOrDefault(p => p.StartDate == endTime.Date);//如果endTime的下一天就是假期,则取出这个假期
+                    if (nextExcludedDateRange != null && endTime.Hour == 0)
                     //.Hour == 0代表它是零点。如果endTime正好是周六零点，其实它也就是周五结束，且下个任务应从下周一开始
                     {
-                        lastEndTime = endTime.AddDays(excludedDateRange.TotalDays);
-                        taskModel.HolidayRemark += endDateStr + "之后是" + excludedDateRange.Remark;
+                        lastEndTime = endTime.AddDays(nextExcludedDateRange.TotalDays);
+                        taskModel.HolidayRemark += endDateStr + "之后是" + nextExcludedDateRange.Remark;
                     }
                     else
                     {
@@ -251,7 +265,18 @@ namespace Ljc.Schedule.ViewModel
         private List<CoherentDateRange> GetPossibleCrossCoherentDateRanges(DateTime startTime, double spentDays,
             List<CoherentDateRange> dateRanges)
         {
-            return dateRanges.Where(p => startTime <= p.EndDate && startTime.AddDays(spentDays) >= p.StartDate).ToList();
+            var list = new List<CoherentDateRange>();
+            for (int i = 0; i < dateRanges.Count; i++)
+            {
+                if (HasCrossedDateRange(startTime, spentDays, dateRanges[i]))
+                {
+                    list.Add(dateRanges[i]);
+                    spentDays += dateRanges[i].TotalDays;
+                }
+            }
+
+            return list;
+            //return dateRanges.Where(p => startTime <= p.EndDate && startTime.AddDays(spentDays) >= p.StartDate).ToList();
         }
 
         /// <summary>
@@ -264,8 +289,8 @@ namespace Ljc.Schedule.ViewModel
             while (gapDays <= spentDays)
             {
                 var addedStart = startTime.AddDays(gapDays);
-                if (addedStart.Hour != 0 && addedStart.Date == dateRange.StartDate//.Hour != 0代表其是从中午开始的情况（工作量是半天的）,如果.Hour==0代表它刚好是前一天晚上完成的,所以不算跨跃
-                               || addedStart.Date != dateRange.StartDate && addedStart.Date <= dateRange.EndDate)//要把StartDate排除
+                if (addedStart.Hour != 0 && addedStart.Date == dateRange.StartDate.Date//.Hour != 0代表其是从中午开始的情况（工作量是半天的）,如果.Hour==0代表它刚好是前一天晚上完成的,所以不算跨跃
+                               || addedStart.Date > dateRange.StartDate.Date && addedStart.Date <= dateRange.EndDate.Date)//要把StartDate排除
                 {
                     return true;
                 }
