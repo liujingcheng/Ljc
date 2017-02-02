@@ -422,8 +422,17 @@ namespace Ljc.Schedule.ViewModel
         private List<CoherentDateRange> GetAllCoherentDateRanges(List<DateTime> rawDates)
         {
             var list = new List<CoherentDateRange>();
-            var orderedDates = rawDates.OrderBy(p => p).Select(q => new DateTime(q.Year, q.Month, q.Day)).ToList();//复制一份,不影响原有列表
+            if (rawDates == null || rawDates.Count == 0)
+            {
+                return list;
+            }
+            if (rawDates.Count == 1)
+            {
+                list.Add(new CoherentDateRange(rawDates[0], rawDates[0]));
+                return list;
+            }
 
+            var orderedDates = rawDates.OrderBy(p => p).Select(q => new DateTime(q.Year, q.Month, q.Day)).ToList();//复制一份,不影响原有列表
             if (orderedDates.Count == 2)
             //只有两个直接返回
             {
@@ -431,13 +440,42 @@ namespace Ljc.Schedule.ViewModel
                 return list;
             }
 
-            for (int i = 0, j = 0; i < orderedDates.Count - 1;)
+            for (int i = 0, j = 0; i < orderedDates.Count - 2;)
             {
                 if ((orderedDates[i + 1] - orderedDates[i]).Days > 1)
                 {
-                    list.Add(new CoherentDateRange(orderedDates[j], orderedDates[i > j ? i : i + 1]));
-                    i += i > j ? 1 : 2;
+                    var isAfterNextDaySingle = (orderedDates[i + 2] - orderedDates[i + 1]).Days > 1;//下下一天是否是个孤立日
+                    list.Add(i > j
+                        ? new CoherentDateRange(orderedDates[j], orderedDates[i])
+                        : new CoherentDateRange(orderedDates[j], orderedDates[i + 1]));//i==j
+                    if (isAfterNextDaySingle)
+                    {
+                        list.Add(new CoherentDateRange(orderedDates[i + 1], orderedDates[i + 1]));
+                    }
 
+                    if (i > j)
+                    {
+                        if (isAfterNextDaySingle)
+                        {
+                            i += 2;
+                        }
+                        else
+                        {
+                            i += 1;
+                        }
+                    }
+                    else
+                    //i==j
+                    {
+                        if (isAfterNextDaySingle)
+                        {
+                            i += 3;
+                        }
+                        else
+                        {
+                            i += 2;
+                        }
+                    }
                     j = i;
                 }
                 else
