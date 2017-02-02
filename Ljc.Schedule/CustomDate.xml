@@ -5,13 +5,19 @@
   <!--要排除的日期-->
   <exclude-date>
     <!--格式示例:<date start-date="2017/01/21" end-date="2017/02/02" remark="春节假期"/>-->
+    <date start-date="2016/12/31" end-date="2017/01/02" remark="元旦假期"/>
     <date start-date="2017/01/21" end-date="2017/02/02" remark="春节假期"/>
     <date start-date="2017-04-02" end-date="2017-04-04" remark="清明假期"/>
+    <date start-date="2017-04-29" end-date="2017-05-01" remark="劳动节假期"/>
+    <date start-date="2017-05-28" end-date="2017-05-30" remark="端午节假期"/>
+    <date start-date="2017-10-01" end-date="2017-10-08" remark="国庆+中秋假期"/>
   </exclude-date>
   <!--要包含的日期-->
   <include-date>
     <!--格式示例:<date start-date="2017-04-01" end-date="2017-04-01" remark="清明假期补班"/>-->
     <date start-date="2017-02-04" end-date="2017-02-04" remark="春节假期补班"/>
     <date start-date="2017-04-01" end-date="2017-04-01" remark="清明假期补班"/>
+    <date start-date="2017-05-27" end-date="2017-05-27" remark="端午节假期补班"/>
+    <date start-date="2017-09-30" end-date="2017-09-30" remark="端午节假期补班"/>
   </include-date>
 </customdate>
