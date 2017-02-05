@@ -222,7 +222,7 @@ namespace Ljc.DesktopApp
                         var aTimer = new System.Timers.Timer(30000);
                         aTimer.Elapsed += delegate
                         {
-                            ShowTip(tip, discardTip, autoHide);
+                            ShowTip(tip, false, autoHide);
                         };
                         aTimer.AutoReset = false;
                         aTimer.Enabled = true;
