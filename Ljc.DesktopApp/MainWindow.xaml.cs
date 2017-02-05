@@ -25,13 +25,33 @@ namespace Ljc.DesktopApp
         /// </summary>
         public System.Timers.Timer HideTimer;
         /// <summary>
-        /// 蕃茄时间25分钟
-        /// </summary>
-        private int _tomatoTimeSpan = 25;
-        /// <summary>
-        /// 蕃茄时间定时器
+        /// 番茄 时间定时器
         /// </summary>
         private DispatcherTimer _tomatoTimer;
+        /// <summary>
+        /// 番茄 时间(分钟)
+        /// </summary>
+        private int _tomatoTimeSpan;
+        /// <summary>
+        /// 消息提示框持续时间(秒)
+        /// </summary>
+        private int _hideTimerSpan;
+        /// <summary>
+        /// 检查是否有任务在进行的时间间隔(秒)
+        /// </summary>
+        private int _checkTaskSpan;
+        /// <summary>
+        /// 循环提示语间隔时间(分钟)
+        /// </summary>
+        private int _recurringTipSpan;
+        /// <summary>
+        /// 非工作时间开始提示小时数(比如晚上8点后,那就是20)
+        /// </summary>
+        private int _nonWorkHourTipStartHour;
+        /// <summary>
+        /// 停止写代码的开始提示小时数(比如晚上11点后,那就是23)
+        /// </summary>
+        private int _stopCodingStartHour;
 
         #region 初始化
 
@@ -39,20 +59,7 @@ namespace Ljc.DesktopApp
         {
             InitializeComponent();
             Loaded += MainWindow_Loaded;
-
-            MyTaskbarNotifier = new TaskbarNotifier("提示", "请记录时间！");
-            HideTimer = new System.Timers.Timer(5000)
-            {
-                AutoReset = false,
-                Enabled = true
-            };
-            HideTimer.Elapsed += delegate
-            {
-                MyTaskbarNotifier.HideWin();
-            };
-
-            _tomatoTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(_tomatoTimeSpan) };
-            _tomatoTimer.Tick += NoticeTomatoTimeout;
+            Init();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -61,6 +68,43 @@ namespace Ljc.DesktopApp
             CheckIsAnyTaskGoing();
             RecurringTip();
             SpecificTimeTip();
+        }
+
+        /// <summary>
+        /// 初始化
+        /// </summary>
+        private void Init()
+        {
+#if DEBUG
+            _tomatoTimeSpan = 1;
+            _hideTimerSpan = 4;
+            _checkTaskSpan = 30;
+            _recurringTipSpan = 1;
+            _nonWorkHourTipStartHour = 12;
+            _stopCodingStartHour = 12;
+#else
+
+            _tomatoTimeSpan = 25;
+            _hideTimerSpan = 4;
+            _checkTaskSpan = 30;
+            _recurringTipSpan = 40;
+            _nonWorkHourTipStartHour = 19;
+            _stopCodingStartHour = 23;
+#endif
+
+            MyTaskbarNotifier = new TaskbarNotifier("提示", "请记录时间！");
+            HideTimer = new System.Timers.Timer(_hideTimerSpan * 1000)
+            {
+                AutoReset = false,
+                Enabled = true
+            };
+            HideTimer.Elapsed += delegate
+            {
+                MyTaskbarNotifier.AutoHideWinLater();
+            };
+
+            _tomatoTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(_tomatoTimeSpan) };
+            _tomatoTimer.Tick += NoticeTomatoTimeout;
         }
 
         #endregion
@@ -131,7 +175,7 @@ namespace Ljc.DesktopApp
                                 }
                             }
                         }
-                        Thread.Sleep(30000);
+                        Thread.Sleep(_checkTaskSpan * 1000);
 
                     }
                     catch (Exception ex)
@@ -151,12 +195,12 @@ namespace Ljc.DesktopApp
             string[] tips = { "谨慎编程，一朝不慎满盘皆输！", "先写出思路再动手！", "提高效率，完成计划！", "奋斗赢得尊重！", "重在效率——单位时间的产出！而非持续的低产出投入！" };
             DispatcherTimer timer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMinutes(40)
+                Interval = TimeSpan.FromMinutes(_recurringTipSpan)
             };
             timer.Tick += delegate
             {
                 ShowTip(tips[i], false);
-                if (DateTime.Now.Hour >= 19)
+                if (DateTime.Now.Hour >= _nonWorkHourTipStartHour)
                 {
                     ShowTip("不要急着赶进度，注重学习与成长！", false);
                 }
@@ -180,7 +224,7 @@ namespace Ljc.DesktopApp
             };
             timer.Tick += delegate
             {
-                if (DateTime.Now.Hour >= 23)
+                if (DateTime.Now.Hour >= _stopCodingStartHour)
                 {
                     ShowTip("要停止写代码了！");
                 }
@@ -193,13 +237,13 @@ namespace Ljc.DesktopApp
         #region 辅助方法
 
         /// <summary>
-        /// 提示蕃茄时间到了
+        /// 提示番茄 时间到了
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void NoticeTomatoTimeout(object sender, System.EventArgs e)
         {
-            ShowTip("蕃茄时间到了！", false, false);
+            ShowTip("番茄时间到了！", false, false);
             _tomatoTimer.Stop();
         }
 
@@ -211,11 +255,18 @@ namespace Ljc.DesktopApp
         /// <param name="autoHide">提示是否自动消失</param>
         private void ShowTip(string tip, bool discardThisTip = true, bool autoHide = true)
         {
-            //Task.Factory.StartNew(() =>
-            //{
             this.Dispatcher.BeginInvoke((Action)delegate ()
             {
-                if (MyTaskbarNotifier.IsVisible)
+                if (tip.Contains("番茄") || !MyTaskbarNotifier.IsVisible)
+                {
+                    MyTaskbarNotifier.ChangeTip(tip);
+                    MyTaskbarNotifier.Show();
+                    if (autoHide)
+                    {
+                        HideTimer.Start();
+                    }
+                }
+                else
                 //如果还有提示未关闭
                 {
                     if (discardThisTip)
@@ -234,14 +285,7 @@ namespace Ljc.DesktopApp
                         ShowTip(tip, false, autoHide);
                     };
                 }
-                MyTaskbarNotifier.ChangeTip(tip);
-                MyTaskbarNotifier.Show();
-                if (autoHide)
-                {
-                    HideTimer.Start();
-                }
             });
-            //});
         }
         #endregion
     }

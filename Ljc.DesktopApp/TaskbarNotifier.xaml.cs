@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -30,15 +31,26 @@ namespace Ljc.DesktopApp
         public void Image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             RestartTomatoTimer = true;
-            HideWin();
+            this.Hide();
         }
 
-        public void HideWin()
+        /// <summary>
+        /// 过一会使窗体自动消失
+        /// </summary>
+        public void AutoHideWinLater()
         {
-            mGrid.OpacityMask = this.Resources["ClosedBrush"] as LinearGradientBrush;
-            Storyboard std = this.Resources["ClosedStoryboard"] as Storyboard;
-            std.Completed += delegate { this.Hide(); };
-            std.Begin();
+            this.Dispatcher.BeginInvoke((Action)delegate ()
+            {
+                if (contentTxt.Text.Contains("番茄"))
+                //番茄时间到了后不自动消失(由于多线程的原因,无法保证番茄时间提示不被自动关掉,所以要加上这句话)
+                {
+                    return;
+                }
+                mGrid.OpacityMask = this.Resources["ClosedBrush"] as LinearGradientBrush;
+                Storyboard std = this.Resources["ClosedStoryboard"] as Storyboard;
+                std.Completed += delegate { this.Hide(); };
+                std.Begin();
+            });
         }
 
         public void ChangeTip(string tip)
