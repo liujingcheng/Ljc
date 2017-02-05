@@ -3,9 +3,11 @@ using System.Configuration;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Timer = System.Threading.Timer;
 
 namespace Ljc.DesktopApp
 {
@@ -137,10 +139,10 @@ namespace Ljc.DesktopApp
             };
             timer.Tick += delegate
             {
-                ShowTip(tips[i]);
+                ShowTip(tips[i], false);
                 if (DateTime.Now.Hour >= 19)
                 {
-                    ShowTip("不要急着赶进度，注重学习与成长！");
+                    ShowTip("不要急着赶进度，注重学习与成长！", false);
                 }
                 i++;
                 if (i == tips.Length)
@@ -192,7 +194,7 @@ namespace Ljc.DesktopApp
         /// <param name="e"></param>
         private void NoticeTomatoTimeout(object sender, System.EventArgs e)
         {
-            ShowTip("蕃茄时间到了！", false);
+            ShowTip("蕃茄时间到了！", false, false);
             _tomatoTimer.Stop();
         }
 
@@ -200,17 +202,30 @@ namespace Ljc.DesktopApp
         /// 桌面右下角显示提示信息
         /// </summary>
         /// <param name="tip">提示信息</param>
+        /// <param name="discardTip">如果还有提示未消失,是否要舍弃本次提示</param>
         /// <param name="autoHide">提示是否自动消失</param>
-        private void ShowTip(string tip, bool autoHide = true)
+        private void ShowTip(string tip, bool discardTip = true, bool autoHide = true)
         {
             Task.Factory.StartNew(() =>
             {
                 this.Dispatcher.BeginInvoke((Action)delegate ()
                 {
                     if (MyTaskbarNotifier.IsVisible)
-                    //如果还有提示未关闭，则直接返回，舍弃新提示（用线程睡眠等待会导致提示界面卡死，即使是另开线程的）
+                    //如果还有提示未关闭
                     {
-                        return;
+                        if (discardTip)
+                        //如果要舍弃就直接返回
+                        {
+                            return;
+                        }
+                        //另开定时器等待30秒后再执行
+                        var aTimer = new System.Timers.Timer(30000);
+                        aTimer.Elapsed += delegate
+                        {
+                            ShowTip(tip, discardTip, autoHide);
+                        };
+                        aTimer.AutoReset = false;
+                        aTimer.Enabled = true;
                     }
                     MyTaskbarNotifier.ChangeTip(tip);
                     MyTaskbarNotifier.Show();
@@ -221,7 +236,6 @@ namespace Ljc.DesktopApp
                 });
             });
         }
-
         #endregion
     }
 }
