@@ -206,35 +206,35 @@ namespace Ljc.DesktopApp
         /// <param name="autoHide">提示是否自动消失</param>
         private void ShowTip(string tip, bool discardTip = true, bool autoHide = true)
         {
-            Task.Factory.StartNew(() =>
+            //Task.Factory.StartNew(() =>
+            //{
+            this.Dispatcher.BeginInvoke((Action)delegate ()
             {
-                this.Dispatcher.BeginInvoke((Action)delegate ()
-                {
-                    if (MyTaskbarNotifier.IsVisible)
+                if (MyTaskbarNotifier.IsVisible)
                     //如果还有提示未关闭
                     {
-                        if (discardTip)
+                    if (discardTip)
                         //如果要舍弃就直接返回
                         {
-                            return;
-                        }
+                        return;
+                    }
                         //另开定时器等待30秒后再执行
                         var aTimer = new System.Timers.Timer(30000);
-                        aTimer.Elapsed += delegate
-                        {
-                            ShowTip(tip, false, autoHide);
-                        };
-                        aTimer.AutoReset = false;
-                        aTimer.Enabled = true;
-                    }
-                    MyTaskbarNotifier.ChangeTip(tip);
-                    MyTaskbarNotifier.Show();
-                    if (autoHide)
+                    aTimer.Elapsed += delegate
                     {
-                        Timer.Start();
-                    }
-                });
+                        ShowTip(tip, false, autoHide);
+                    };
+                    aTimer.AutoReset = false;
+                    aTimer.Enabled = true;
+                }
+                MyTaskbarNotifier.ChangeTip(tip);
+                MyTaskbarNotifier.Show();
+                if (autoHide)
+                {
+                    Timer.Start();
+                }
             });
+            //});
         }
         #endregion
     }
