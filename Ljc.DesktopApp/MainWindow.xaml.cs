@@ -16,14 +16,22 @@ namespace Ljc.DesktopApp
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static Ljc.DesktopApp.TaskbarNotifier MyTaskbarNotifier = new Ljc.DesktopApp.TaskbarNotifier("提示", "请记录时间！");
-        public static DispatcherTimer Timer = new DispatcherTimer();
+        /// <summary>
+        /// 消息提示框
+        /// </summary>
+        public TaskbarNotifier MyTaskbarNotifier;
+        /// <summary>
+        /// 隐藏提示框定时器
+        /// </summary>
+        public System.Timers.Timer HideTimer;
         /// <summary>
         /// 蕃茄时间25分钟
         /// </summary>
         private int _tomatoTimeSpan = 25;
-
-        private DispatcherTimer _tomatoTimer = new DispatcherTimer();
+        /// <summary>
+        /// 蕃茄时间定时器
+        /// </summary>
+        private DispatcherTimer _tomatoTimer;
 
         #region 初始化
 
@@ -32,11 +40,19 @@ namespace Ljc.DesktopApp
             InitializeComponent();
             Loaded += MainWindow_Loaded;
 
-            Timer.Interval = TimeSpan.FromSeconds(3);
-            Timer.Tick += new EventHandler(HideNotifWin);
+            MyTaskbarNotifier = new TaskbarNotifier("提示", "请记录时间！");
+            HideTimer = new System.Timers.Timer(5000)
+            {
+                AutoReset = false,
+                Enabled = true
+            };
+            HideTimer.Elapsed += delegate
+            {
+                MyTaskbarNotifier.HideWin();
+            };
 
-            _tomatoTimer.Interval = TimeSpan.FromMinutes(_tomatoTimeSpan);
-            _tomatoTimer.Tick += new EventHandler(NoticeTomatoTimeout);
+            _tomatoTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(_tomatoTimeSpan) };
+            _tomatoTimer.Tick += NoticeTomatoTimeout;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -177,17 +193,6 @@ namespace Ljc.DesktopApp
         #region 辅助方法
 
         /// <summary>
-        /// 隐藏提示窗体
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void HideNotifWin(object sender, System.EventArgs e)
-        {
-            MyTaskbarNotifier.HideWin();
-            Timer.Stop();
-        }
-
-        /// <summary>
         /// 提示蕃茄时间到了
         /// </summary>
         /// <param name="sender"></param>
@@ -202,36 +207,38 @@ namespace Ljc.DesktopApp
         /// 桌面右下角显示提示信息
         /// </summary>
         /// <param name="tip">提示信息</param>
-        /// <param name="discardTip">如果还有提示未消失,是否要舍弃本次提示</param>
+        /// <param name="discardThisTip">如果还有提示未消失,是否要舍弃本次提示</param>
         /// <param name="autoHide">提示是否自动消失</param>
-        private void ShowTip(string tip, bool discardTip = true, bool autoHide = true)
+        private void ShowTip(string tip, bool discardThisTip = true, bool autoHide = true)
         {
             //Task.Factory.StartNew(() =>
             //{
             this.Dispatcher.BeginInvoke((Action)delegate ()
             {
                 if (MyTaskbarNotifier.IsVisible)
-                    //如果还有提示未关闭
+                //如果还有提示未关闭
+                {
+                    if (discardThisTip)
+                    //如果要舍弃就直接返回
                     {
-                    if (discardTip)
-                        //如果要舍弃就直接返回
-                        {
                         return;
                     }
-                        //另开定时器等待30秒后再执行
-                        var aTimer = new System.Timers.Timer(30000);
+                    //另开定时器等待30秒后再执行
+                    var aTimer = new System.Timers.Timer(30000)
+                    {
+                        AutoReset = false,
+                        Enabled = true
+                    };
                     aTimer.Elapsed += delegate
                     {
                         ShowTip(tip, false, autoHide);
                     };
-                    aTimer.AutoReset = false;
-                    aTimer.Enabled = true;
                 }
                 MyTaskbarNotifier.ChangeTip(tip);
                 MyTaskbarNotifier.Show();
                 if (autoHide)
                 {
-                    Timer.Start();
+                    HideTimer.Start();
                 }
             });
             //});
