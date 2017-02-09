@@ -192,7 +192,7 @@ namespace Ljc.DesktopApp
         private void RecurringTip()
         {
             int i = 0;
-            string[] tips = { "谨慎编程，一朝不慎满盘皆输！", "先写出思路再动手！", "提高效率，完成计划！", "奋斗赢得尊重！", "重在效率——单位时间的产出！而非持续的低产出投入！" };
+            string[] tips = { "谨慎编程，一朝不慎满盘皆输！", "先写出思路再动手！", "提高效率，完成计划！", "奋斗赢得尊重！", "重在效率——单位时间的产出！而非持续的低产出投入！", "不要用执行上的勤奋，掩盖思考上的懒惰。" };
             DispatcherTimer timer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMinutes(_recurringTipSpan)
