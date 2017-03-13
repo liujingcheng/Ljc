@@ -16,7 +16,7 @@ namespace Ljc.Schedule.ViewModel
 {
     public class AutoPlanViewModel
     {
-        private IList<TaskModel> _taskModels;
+        private List<TaskModel> _taskModels;
         private string _sourceFileName;
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace Ljc.Schedule.ViewModel
                            _sourceFileName = dialog.FileName;
                            var ds = importExcel.ImportDataSet(_sourceFileName, false, 1, 0);
                            var dt = ds.Tables[0];
-                           _taskModels = ModelConverter<TaskModel>.ConvertToModel(dt);
+                           _taskModels = ModelConverter<TaskModel>.ConvertToModel(dt).ToList();
                            if (_taskModels.Count == 0)
                            {
                                return;
@@ -106,7 +106,7 @@ namespace Ljc.Schedule.ViewModel
                            }
 
                            var excludedDateRanges = GetAllExcludedDateRanges(firstStartTime);
-                           CalSchedule(_taskModels, excludedDateRanges);
+                           _taskModels = CalSchedule(_taskModels, excludedDateRanges);
                        }
                    }
                    catch (Exception)
@@ -179,7 +179,7 @@ namespace Ljc.Schedule.ViewModel
         /// </summary>
         /// <param name="list">任务列表</param>
         /// <param name="excludedDateRanges">综合了所有用户自定义的配置之后最终要被排除的所有日期段</param>
-        private void CalSchedule(IList<TaskModel> list, List<CoherentDateRange> excludedDateRanges)
+        private List<TaskModel> CalSchedule(List<TaskModel> list, List<CoherentDateRange> excludedDateRanges)
         {
             var members = list.Select(p => p.TaskMember).Distinct().ToList();
 
@@ -210,7 +210,7 @@ namespace Ljc.Schedule.ViewModel
                     if (!double.TryParse(taskModel.PlanSpentDays, out spentDays))
                     {
                         MessageBox.Show("有些任务的工作量缺失或格式不正确，请检查！");
-                        return;
+                        return list;
                     }
 
                     var crossedDateRanges = GetPossibleCrossCoherentDateRanges(startTime, spentDays, excludedDateRanges);
@@ -253,6 +253,7 @@ namespace Ljc.Schedule.ViewModel
                 }
             }
 
+            return list.OrderBy(p => p.PlanStartTimeDateTime).ToList();
         }
 
         /// <summary>

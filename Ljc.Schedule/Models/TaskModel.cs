@@ -1,4 +1,6 @@
-﻿namespace Ljc.Schedule.Models
+﻿using System;
+
+namespace Ljc.Schedule.Models
 {
     public class TaskModel
     {
@@ -11,5 +13,23 @@
         public string Output { get; set; }
         public string Remark { get; set; }
         public string HolidayRemark { get; set; }
+
+        /// <summary>
+        /// PlanStartTime的时间类型，用于排序
+        /// </summary>
+        public DateTime? PlanStartTimeDateTime
+        {
+            get
+            {
+                DateTime d;
+                if (DateTime.TryParse(PlanStartTime, out d))
+                {
+                    return d;
+                }
+                return null;
+            }
+        }
     }
 }
+
+
