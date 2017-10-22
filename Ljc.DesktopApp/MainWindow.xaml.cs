@@ -244,7 +244,7 @@ namespace Ljc.DesktopApp
         /// <param name="e"></param>
         private void NoticeTomatoTimeout(object sender, System.EventArgs e)
         {
-            ShowTip("番茄时间到了！", false, false);
+            ShowTip("番茄钟结束，过下今日待办吧！", false, false);
             _tomatoTimer.Stop();
         }
 
