@@ -28,7 +28,12 @@ namespace Ljc.DesktopApp
             this.Top = SystemParameters.WorkArea.Height - this.Height;
         }
 
-        public void Image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        public void CloseNotifyButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            CloseNotify();
+        }
+
+        private void CloseNotify()
         {
             RestartTomatoTimer = true;
             this.Hide();
@@ -57,6 +62,5 @@ namespace Ljc.DesktopApp
         {
             contentTxt.Text = tip;
         }
-
     }
 }
