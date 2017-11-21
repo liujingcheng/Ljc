@@ -66,7 +66,7 @@ namespace Ljc.DesktopApp
         {
             this.Hide();
             CheckIsAnyTaskGoing();
-            RecurringTip();
+            //RecurringTip();
             SpecificTimeTip();
         }
 
@@ -244,7 +244,7 @@ namespace Ljc.DesktopApp
         /// <param name="e"></param>
         private void NoticeTomatoTimeout(object sender, System.EventArgs e)
         {
-            ShowTip("时间到！专注了吗？要有危机感，紧迫感！过下今日待办！", false, false);
+            ShowTip("时间到！专注了吗？过下今日待办！", false, false);
             _tomatoTimer.Stop();
         }
 
