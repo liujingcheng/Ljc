@@ -109,9 +109,10 @@ namespace Ljc.Schedule.ViewModel
                            _taskModels = CalSchedule(_taskModels, excludedDateRanges);
                        }
                    }
-                   catch (Exception)
+                   catch (Exception e)
                    {
-                       MessageBox.Show("1. 请确认Excel没有被其它进程占用；2. 请确认它是2003版本的xls");
+                       MessageBox.Show(string.Format("1. 请确认Excel没有被其它进程占用；2. 请确认它是2003版本的xls{0}{1}{0}{2}",
+                           Environment.NewLine, e.Message, e.StackTrace));
                    }
                });
             }
