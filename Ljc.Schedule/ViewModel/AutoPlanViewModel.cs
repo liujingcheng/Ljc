@@ -16,6 +16,11 @@ namespace Ljc.Schedule.ViewModel
 {
     public class AutoPlanViewModel
     {
+        /// <summary>
+        /// 每日可分割的最小粒度（天）
+        /// </summary>
+        private const double DaySplitGranularity = 0.1;
+
         private List<TaskModel> _taskModels;
         private string _sourceFileName;
 
@@ -282,12 +287,12 @@ namespace Ljc.Schedule.ViewModel
         }
 
         /// <summary>
-        /// 中间是否经过了一个日期段
+        /// 中间是否经过了一个日期段（判断的最小粒度是0.1天）
         /// </summary>
         /// <returns></returns>
         private bool HasCrossedDateRange(DateTime startTime, double spentDays, CoherentDateRange dateRange)
         {
-            var gapDays = 0.5;
+            var gapDays = DaySplitGranularity;
             while (gapDays <= spentDays)
             {
                 var addedStart = startTime.AddDays(gapDays);
@@ -296,7 +301,7 @@ namespace Ljc.Schedule.ViewModel
                 {
                     return true;
                 }
-                gapDays += 0.5;
+                gapDays += DaySplitGranularity;
             }
             return false;
         }
