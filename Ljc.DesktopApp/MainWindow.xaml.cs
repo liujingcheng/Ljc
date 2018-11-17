@@ -17,6 +17,15 @@ namespace Ljc.DesktopApp
     public partial class MainWindow : Window
     {
         /// <summary>
+        /// 忘了记录时间的提醒文字
+        /// </summary>
+        private readonly string _remindTimeLogText = ConfigurationManager.AppSettings["RemindTimeLogText"];
+        /// <summary>
+        /// 时间到了之后的提醒文字
+        /// </summary>
+        private readonly string _timeoutText = ConfigurationManager.AppSettings["TimeoutText"];
+
+        /// <summary>
         /// 消息提示框
         /// </summary>
         public TaskbarNotifier MyTaskbarNotifier;
@@ -92,7 +101,7 @@ namespace Ljc.DesktopApp
             _stopCodingStartHour = 23;
 #endif
 
-            MyTaskbarNotifier = new TaskbarNotifier("提示", "请记录时间！");
+            MyTaskbarNotifier = new TaskbarNotifier("REMINDER", _remindTimeLogText);
             HideTimer = new System.Timers.Timer(_hideTimerSpan * 1000)
             {
                 AutoReset = false,
@@ -164,7 +173,7 @@ namespace Ljc.DesktopApp
                         {
                             if (!anygoing)
                             {
-                                ShowTip("请记录时间！");
+                                ShowTip(_remindTimeLogText);
                             }
                             else
                             {
@@ -244,7 +253,7 @@ namespace Ljc.DesktopApp
         /// <param name="e"></param>
         private void NoticeTomatoTimeout(object sender, System.EventArgs e)
         {
-            ShowTip("时间到！过下今日待办！", false, false);
+            ShowTip(_timeoutText, false, false);
             _tomatoTimer.Stop();
         }
 
